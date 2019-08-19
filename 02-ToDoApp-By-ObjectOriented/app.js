@@ -6,12 +6,12 @@ const on = (event, ele, callback) => all(ele).forEach(v => v.addEventListener(ev
 // ToDoApp
 const Repository = class {
   constructor () { this.selected = 0, this.lastIdx = 1, this.data = [] }
-  insert (obj) { this.data.push(obj) }
+  insert (obj) { this.data.push(obj); return this }
   delete (idx, data = this.data) { data.splice(data.findIndex(v => v.idx === idx * 1), 1) }
   select (idx) { this.selected = idx }
   toggle (idx, target = this.find(idx)) { target.state = !target.state }
-  find (idx) { return this.data.find(v => v.idx === idx * 1) }
-  findChildren (data, idx = 0) { return data.filter(v => v.parent === idx * 1) }
+  find   (idx) { return this.data.find(v => v.idx === idx * 1) }
+  findChildren   (data, idx) { return data.filter(v => v.parent === idx * 1) }
   findCategories (data) { return data.filter(v => v.type === 'category') }
   findContents   (data) { return data.filter(v => v.type === 'content') }
 }
@@ -40,53 +40,37 @@ const Renderer = class {
     document.body.innerHTML = `
       <form action="" method="post">
         <fieldset><legend>입력</legend>
-          <p>
-            <label>
-              <span>타입</span>
-              <select name="type">
-                <option value="content">내용</option>
-                <option value="category">카테고리</option>
-              </select>
-            </label>
-          </p>
-          <p>
-            <label>
-              <span>내용</span>
-              <input type="text" name="name" size="20" autofocus />
-            </label>
-          </p>
-          <p>
-            <button type="submit">전송</button>
-            ${selected ? `<button type="button" class="cancel">취소</button>` : ''}
-          </p>
+          <label> 타입
+            <select name="type">
+              <option value="content">내용</option>
+              <option value="category">카테고리</option>
+            </select>
+          </label>
+          <label> 내용 <input type="text" name="name" size="20" /> </label>
+          <button type="submit">전송</button>
+          ${selected ? `<button type="button" class="cancel">취소</button>` : ''}
         </fieldset>
       </form>
-      <div id="list">${this.tree(findChildren(data))}</div>
+      <div id="list">${this.tree(findChildren(data, 0))}</div>
     `
     this.setEvent()
   }
 
   setEvent (repo = this.repo) {
-    on('click', 'button.cancel', _ => (repo.select(0), this.render(repo)))
-    on('click', '.category>strong', (e, idx = e.target.parentNode.dataset.idx * 1) => (repo.select(idx), this.render(repo)))
-    on('click', '.content>span',    (e, idx = e.target.parentNode.dataset.idx * 1) => (repo.toggle(idx), this.render(repo)))
-    on('click', 'button.delete',    (e, idx = e.target.parentNode.dataset.idx * 1) => (repo.delete(idx), this.render(repo)))
+    on('click', 'button.cancel', _ => (repo.select(0), this.render()))
+    on('click', '.category>strong', (e, idx = e.target.parentNode.dataset.idx * 1) => (repo.select(idx), this.render()))
+    on('click', '.content>span',    (e, idx = e.target.parentNode.dataset.idx * 1) => (repo.toggle(idx), this.render()))
+    on('click', 'button.delete',    (e, idx = e.target.parentNode.dataset.idx * 1) => (repo.delete(idx), this.render()))
     on('submit', 'form', (e, parent = repo.selected, idx = repo.lastIdx++, state = false) => {
       e.preventDefault()
       const [type, name] = [e.target.type.value, e.target.name.value]
-      repo.insert({ parent, idx, state, type, name })
-      this.render(repo)
+      repo.insert({ parent, idx, state, type, name }), this.render()
       one('form').name.focus()
     })
   }
 }
 const ToDoApp = class {
-  constructor () {
-    this.styleSet()
-    const repo = new Repository()
-    new Renderer(repo)
-  }
-
+  constructor () { this.styleSet(), new Renderer(new Repository()) }
   styleSet () {
     one('head').innerHTML += `
       <style>
@@ -97,10 +81,6 @@ const ToDoApp = class {
       </style>
     `
   }
-
-  static run () {
-    new ToDoApp()
-  }
 }
 
-window.onload = ToDoApp.run
+window.onload = _ => new ToDoApp()
