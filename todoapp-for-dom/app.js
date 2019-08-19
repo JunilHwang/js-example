@@ -9,31 +9,28 @@ const app = () => {
   let selected = 0, lastIdx = 1
   const doubleNum = num => `0${num}`.substr(-2)
   const render = _ => {
-    const listRender = listData => {
+    const tree = (listData, categories = [], contents = []) => {
       if(!listData.length) return ''
-      const categories = listData.filter(v => v.type === 'category' )
-      const contents = listData.filter(v => v.type !== 'category' )
+      listData.forEach(v => v.type === 'category' ? categories.push(v) : contents.push(v) )
       return `
         <ul>
-          ${categories.map(v => `
-            <li class="category ${selected === v.idx ? 'active' : ''}" data-idx="${v.idx}">
-              <strong>${v.name}</strong>
+          ${categories.map(({ idx, name}) => `
+            <li class="category ${selected === idx ? 'active' : ''}" data-idx="${idx}">
+              <strong>${name}</strong>
               <button type="button" class="delete">삭제</button>
-              ${listRender(v.children)}
+              ${tree(data.filter(({ parent }) => parent === idx))}
             </li>
           `).join('')}
-          ${contents.map(v => `
-            <li class="content ${v.state ? 'active' : ''}" data-idx="${v.idx}">
-              <span>${v.name}</span>
+          ${contents.map(({ state, idx, name}) => `
+            <li class="content ${state ? 'active' : ''}" data-idx="${idx}">
+              <span>${name}</span>
               <button type="button" class="delete">삭제</button>
             </li>
           `).join('')}
         </ul>
       `
     }
-    const minDate = (date = new Date()) => `${date.getFullYear()}-${doubleNum(date.getMonth() + 1)}-${doubleNum(date.getDate())}`
-    data.forEach(v => v.children = data.filter(v2 => v2.parent === v.idx))
-    const bodyRender = `
+    document.body.innerHTML = `
       <form action="" method="post">
         <fieldset><legend>입력</legend>
           <p>
@@ -48,7 +45,7 @@ const app = () => {
           <p>
             <label>
               <span>내용</span>
-              <input type="text" name="name" size="20" />
+              <input type="text" name="name" size="20" autofocus />
             </label>
           </p>
           <p>
@@ -57,10 +54,8 @@ const app = () => {
           </p>
         </fieldset>
       </form>
-      <div id="list">${listRender(data.filter(v => v.parent === 0))}</div>
+      <div id="list">${tree(data.filter(v => v.parent === 0))}</div>
     `
-
-    document.body.innerHTML = bodyRender
 
     on('click', 'button.cancel', cancel)
     on('click', '.category>strong', select)
@@ -68,37 +63,22 @@ const app = () => {
     on('click', 'button.delete', dataDelete)
     on('submit', 'form', dataInsert)
   }
-  const cancel = e => {
-    selected = 0
+  const cancel = _ => (selected = 0, render())
+  const select = (e, idx = e.target.parentNode.dataset.idx * 1) => { selected = idx, render() }
+  const toggle = (e, idx = e.target.parentNode.dataset.idx * 1) => {
+    data.forEach(v => (v.idx === idx) && (v.state = !v.state))
     render()
   }
-  const select = e => {
-    const idx = e.target.parentNode.dataset.idx * 1
-    selected = idx === selected ? null : idx
+  const dataDelete = (e, idx = e.target.parentNode.dataset.idx * 1) => {
+    data.splice(data.findIndex(v => v.idx === idx), 1)
     render()
   }
-  const toggle = e => {
-    const idx = e.target.parentNode.dataset.idx * 1
-    const content = data.find(v => v.idx === idx * 1)
-    content.state = !content.state
-    render()
-  }
-  const dataInsert = e => {
+  const dataInsert = (e, parent = selected, idx = lastIdx++, state = false) => {
     e.preventDefault()
-    const { target } = e
-    const [type, name] = Array.from(new FormData(target).values())
-    const obj = {parent: selected , idx: lastIdx++, type, name}
-    if (type === 'category') obj.children = []
-    else obj.state = false
-    data.push(obj)
+    const [type, name] = [e.target.type.value, e.target.name.value]
+    data.push({ parent, idx, state, type, name })
     render()
     one('form').name.focus()
-  }
-  const dataDelete = e => {
-    const idx = e.target.parentNode.dataset.idx * 1
-    const key = data.findIndex(v => v.idx === idx)
-    data.splice(key, 1)
-    render()
   }
   one('head').innerHTML += `
     <style>
