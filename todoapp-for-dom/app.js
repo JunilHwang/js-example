@@ -1,16 +1,10 @@
 // dom
-const one = (ele, parent = document) => parent.querySelector(ele)
-const all = (ele, parent = document) => parent.querySelectorAll(ele)
-const create = ele => document.createElement(ele)
-const addClass = (ele, className) => ele.classList.add(className)
-const removeClass = (ele, className) => ele.classList.remove(className)
-const toggleClass = (ele, className) => ele.classList.toggle(className)
-const hasClass = (ele, className) => ele.classList.contains(className)
-const t2e = (text, wrap = create('div')) => (wrap.innerHTML = text, wrap.children[0])
+const one = ele => document.querySelector(ele)
+const all = ele => document.querySelectorAll(ele)
 const on = (event, ele, callback) => all(ele).forEach(v => v.addEventListener(event, callback))
 
+// ToDoApp
 const app = () => {
-
   const data = []
   let selected = 0, lastIdx = 1
   const doubleNum = num => `0${num}`.substr(-2)
@@ -106,15 +100,14 @@ const app = () => {
     data.splice(key, 1)
     render()
   }
-
-  one('head').appendChild(t2e(`
+  one('head').innerHTML += `
     <style>
       #list li {cursor:pointer}
       #list .category>strong{color:#09F;}
       #list .category.active>strong{color:#f09;}
       #list .content.active span::after{content:" [완료]";font-size:11px;color:#09F}
     </style>
-  `))
+  `
   render()
 }
 
