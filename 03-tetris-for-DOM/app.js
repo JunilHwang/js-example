@@ -47,8 +47,8 @@ const game = () => {
     [0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0],
-    [1,1,0,0,0,0,0,0,0,0],
-    [1,1,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0],
   ]
 
   const initX = _ => 5 - ~~(now.get()[0].length / 2)
@@ -66,15 +66,18 @@ const game = () => {
 
   const ground = (block = now.get(), bg = now.getColor()) => {
     let bY = block.length, bX = block[0].length, i = 0
-    if (y === 20 - bY) {
+    const crashChk1 = y === 20 - bY
+    let crashChk2 = 0
+    if (!crashChk1) block.forEach((v1, k1) => v1.forEach((v2, k2) => {
+      if (v2 && groundData[y + 1 + k1][x + k2]) crashChk2+=1
+    }))
+    if (crashChk1 || crashChk2) {
       crashed = true
       block.forEach((v1, k1) => {
         v1.forEach((v2, k2) => {
           if (v2) groundData[y + k1][x + k2] = 1
         })
       })
-      console.log('y', y)
-      console.log('x', x)
     }
     return `
       <div class="ground">
@@ -108,14 +111,15 @@ const game = () => {
   }
 
   let timer = setInterval(_ => {
-    y += 1
     if (crashed) {
       now = next, next = nextBlock(), x = initX(), y = 0
       crashed = false
-      clearTimeout(timer)
+      //clearTimeout(timer)
+    } else {
+      y += 1
     }
     render()
-  }, 10)
+  }, 1000)
 
   render()
 }
