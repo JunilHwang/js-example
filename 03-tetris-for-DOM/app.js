@@ -47,8 +47,8 @@ const game = () => {
     [0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
+    [1,1,0,0,0,0,0,0,0,0],
+    [1,1,0,0,0,0,0,0,0,0],
   ]
 
   const initX = _ => 5 - ~~(now.get()[0].length / 2)
@@ -64,9 +64,18 @@ const game = () => {
     </div>
   `
 
-  const ground = () => {
-    const block = now.get(), bg = now.getColor()
+  const ground = (block = now.get(), bg = now.getColor()) => {
     let bY = block.length, bX = block[0].length, i = 0
+    if (y === 20 - bY) {
+      crashed = true
+      block.forEach((v1, k1) => {
+        v1.forEach((v2, k2) => {
+          if (v2) groundData[y + k1][x + k2] = 1
+        })
+      })
+      console.log('y', y)
+      console.log('x', x)
+    }
     return `
       <div class="ground">
         ${groundData.map((col, gY) => {
@@ -75,17 +84,14 @@ const game = () => {
           const colTpl = `
             <div class="col">
               ${col.map((row, gX) => {
-                const chk2 = chk1 && gX === x + j && i < bY && j < bX
+                const chk2 = chk1 && gX === x + j && i < bY && j < bX && block[i][j++]
                 return `
-                  <div class="row" ${chk2 && block[i][j++] ? `style="background:${bg}"` : ''}></div>
+                  <div class="row" style="background:${chk2 ? bg : (row ? '#aaa' : 'none')}"></div>
                 `
               }).join('')}
             </div>
           `
           if (chk1) i++;
-          if (y === 20 - bY) {
-            crashed = true
-          }
           return colTpl
         }).join('')}
       </div>
@@ -101,14 +107,15 @@ const game = () => {
     ` 
   }
 
-  setInterval(_ => {
+  let timer = setInterval(_ => {
     y += 1
     if (crashed) {
       now = next, next = nextBlock(), x = initX(), y = 0
       crashed = false
+      clearTimeout(timer)
     }
     render()
-  }, 100)
+  }, 10)
 
   render()
 }
