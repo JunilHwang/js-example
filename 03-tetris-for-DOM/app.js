@@ -6,11 +6,10 @@ const on = (event, ele, callback) => all(ele).forEach(v => v.addEventListener(ev
 // apps
 const Block = class {
   constructor (block, color) { this._block = block, this._color = color, this._view = this._block[0] }
-  turn (type, size = this._blocks.length) {
-    let step = this._step + type
-    if (step < 0) step = size - 1
-    this._step = step % size
+  turn (size = this._block.length) {
+    this._step = ((this._step || 0) + 1) % size
     this._view = this._block[this._step]
+    console.log(this._step)
   }
   get () { return this._view }
   getColor () { return this._color }
@@ -53,7 +52,7 @@ const game = () => {
 
   const initX = _ => 5 - ~~(now.get()[0].length / 2)
 
-  let now = nextBlock(), next = nextBlock(), x = initX(), y = 0, crashed = false
+  let now = nextBlock(), next = nextBlock(), x = initX(), y = 0
   const preview = ([data, bg] = [next.get(), next.getColor()]) => `
     <div class="preview">
       ${data.map(col => `
@@ -69,16 +68,18 @@ const game = () => {
     const crashChk1 = y === 20 - bY
     let crashChk2 = 0
     if (!crashChk1) block.forEach((v1, k1) => v1.forEach((v2, k2) => {
-      if (v2 && groundData[y + 1 + k1][x + k2]) crashChk2+=1
+      if (v2 && (groundData[y + k1][x + k2] || groundData[y + 1 + k1][x + k2])) crashChk2+=1
     }))
     if (crashChk1 || crashChk2) {
-      crashed = true
       block.forEach((v1, k1) => {
         v1.forEach((v2, k2) => {
           if (v2) groundData[y + k1][x + k2] = 1
         })
       })
+      now = next, next = nextBlock(), x = initX(), y = 0
     }
+    if (x + bX > 9) x = 10 - bX
+    else if (x < 0) x = 0
     return `
       <div class="ground">
         ${groundData.map((col, gY) => {
@@ -102,26 +103,40 @@ const game = () => {
   }
 
   const render = () => {
+    clearTimeout(timer)
     document.body.innerHTML = `
       <div id="app">
         ${ground()}
         ${preview()}
       </div>
-    ` 
+    `
+    timer = setTimeout(play, 1000)
   }
 
-  let timer = setInterval(_ => {
-    if (crashed) {
-      now = next, next = nextBlock(), x = initX(), y = 0
-      crashed = false
-      //clearTimeout(timer)
-    } else {
-      y += 1
-    }
-    render()
-  }, 1000)
+  const play = _ => (y += 1, render())
+
+  let timer = setTimeout(play, 1000)
 
   render()
+
+  document.onkeyup = e => {
+    console.log(e.keyCode)
+    switch (e.keyCode) {
+      case 38 :
+        now.turn()
+      break;
+      case 40 : 
+        y += 1
+      break;
+      case 37 :
+        x -= 1
+      break;
+      case 39 :
+        x += 1
+      break;
+    }
+    if ([37, 38, 39, 40].indexOf(e.keyCode) !== -1) render()
+  }
 }
 
 one('head').innerHTML += `
