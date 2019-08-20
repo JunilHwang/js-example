@@ -9,7 +9,6 @@ const Block = class {
   turn (size = this._block.length) {
     this._step = ((this._step || 0) + 1) % size
     this._view = this._block[this._step]
-    console.log(this._step)
   }
   get () { return this._view }
   getColor () { return this._color }
@@ -52,7 +51,8 @@ const game = () => {
 
   const initX = _ => 5 - ~~(now.get()[0].length / 2)
 
-  let now = nextBlock(), next = nextBlock(), x = initX(), y = 0
+  let now = nextBlock(), next = nextBlock(), x = initX(), y = 0, nextX = x
+
   const preview = ([data, bg] = [next.get(), next.getColor()]) => `
     <div class="preview">
       ${data.map(col => `
@@ -64,12 +64,17 @@ const game = () => {
   `
 
   const ground = (block = now.get(), bg = now.getColor()) => {
-    let bY = block.length, bX = block[0].length, i = 0
+    let bY = block.length, bX = block[0].length, i = 0, crashChk2 = 0, crashChk3 = 0
     const crashChk1 = y === 20 - bY
-    let crashChk2 = 0
+
     if (!crashChk1) block.forEach((v1, k1) => v1.forEach((v2, k2) => {
-      if (v2 && (groundData[y + k1][x + k2] || groundData[y + 1 + k1][x + k2])) crashChk2+=1
+      if (v2) {
+        const gy = y + k1, gx = x + k2, nextgx = nextX + k2
+        if (groundData[gy][gx] || groundData[gy + 1][gx]) crashChk2 += 1
+        if (groundData[gy][nextgx]) crashChk3 += 1
+      }
     }))
+
     if (crashChk1 || crashChk2) {
       block.forEach((v1, k1) => {
         v1.forEach((v2, k2) => {
@@ -78,8 +83,11 @@ const game = () => {
       })
       now = next, next = nextBlock(), x = initX(), y = 0
     }
+
+    if (!crashChk3) x = nextX
     if (x + bX > 9) x = 10 - bX
     else if (x < 0) x = 0
+
     return `
       <div class="ground">
         ${groundData.map((col, gY) => {
@@ -103,37 +111,21 @@ const game = () => {
   }
 
   const render = () => {
-    clearTimeout(timer)
-    document.body.innerHTML = `
-      <div id="app">
-        ${ground()}
-        ${preview()}
-      </div>
-    `
-    timer = setTimeout(play, 1000)
+    document.body.innerHTML = `<div id="app">${ground()} ${preview()}</div>`
   }
 
   const play = _ => (y += 1, render())
 
-  let timer = setTimeout(play, 1000)
+  let clear = false, setTime = 1000, timer = setInterval(play, setTime)
 
   render()
 
-  document.onkeyup = e => {
-    console.log(e.keyCode)
+  document.onkeydown = e => {
     switch (e.keyCode) {
-      case 38 :
-        now.turn()
-      break;
-      case 40 : 
-        y += 1
-      break;
-      case 37 :
-        x -= 1
-      break;
-      case 39 :
-        x += 1
-      break;
+      case 38 : now.turn(); break;
+      case 40 : y += 1; break;
+      case 37 : nextX = x - 1; break;
+      case 39 : nextX = x + 1; break;
     }
     if ([37, 38, 39, 40].indexOf(e.keyCode) !== -1) render()
   }
