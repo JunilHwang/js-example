@@ -65,8 +65,8 @@ const game = () => {
 
   const ground = (block = now.get(), bg = now.getColor()) => {
     let bY = block.length, bX = block[0].length, i = 0, crashChk2 = 0, crashChk3 = 0
-    const crashChk1 = y === 20 - bY
 
+    const crashChk1 = y === 20 - bY
     if (!crashChk1) block.forEach((v1, k1) => v1.forEach((v2, k2) => {
       if (v2) {
         const gy = y + k1, gx = x + k2, nextgx = nextX + k2
@@ -75,20 +75,16 @@ const game = () => {
       }
     }))
 
-    if (crashChk1 || crashChk2) {
-      block.forEach((v1, k1) => {
-        v1.forEach((v2, k2) => {
-          if (v2) groundData[y + k1][x + k2] = 1
-        })
-      })
-      now = next, next = nextBlock(), x = initX(), y = 0
-    }
-
     if (!crashChk3) x = nextX
     if (x + bX > 9) x = 10 - bX
     else if (x < 0) x = 0
 
-    return `
+    if (crashChk1 || crashChk2) {
+      block.forEach((v1, k1) => v1.forEach((v2, k2) => { if (v2) groundData[y + k1][x + k2] = 1 }))
+      now = next, next = nextBlock(), x = initX(), y = -1, nextX = x
+    }
+
+    const tpl = `
       <div class="ground">
         ${groundData.map((col, gY) => {
           const chk1 = gY === y + i
@@ -108,6 +104,8 @@ const game = () => {
         }).join('')}
       </div>
     `
+
+    return tpl
   }
 
   const render = () => {
@@ -120,7 +118,7 @@ const game = () => {
 
   render()
 
-  document.onkeydown = e => {
+  window.onkeydown = e => {
     switch (e.keyCode) {
       case 38 : now.turn(); break;
       case 40 : y += 1; break;
