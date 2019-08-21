@@ -80,6 +80,10 @@ const game = () => {
     else if (x < 0) x = 0
 
     if (crashChk1 || crashChk2) {
+      if ( y === 0 ) {
+        end()
+        return false
+      }
       block.forEach((v1, k1) => v1.forEach((v2, k2) => { if (v2) groundData[y + k1][x + k2] = 1 }))
       now = next, next = nextBlock(), x = initX(), y = -1, nextX = x
     }
@@ -109,10 +113,21 @@ const game = () => {
   }
 
   const render = () => {
-    document.body.innerHTML = `<div id="app">${ground()} ${preview()}</div>`
+    const groundTpl = ground()
+    if (groundTpl) {
+      const tpl = `<div id="app">${groundTpl} ${preview()}</div>`
+      document.body.innerHTML = tpl
+    } else {
+      alert('게임오버')
+    }
   }
 
   const play = _ => (y += 1, render())
+
+  const end = _ => {
+    clearTimeout(timer)
+    window.onkeydown = _ => {}
+  }
 
   let clear = false, setTime = 1000, timer = setInterval(play, setTime)
 
